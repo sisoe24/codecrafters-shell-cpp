@@ -30,7 +30,7 @@ std::vector<std::string> split(const std::string& text, const char& delimiter = 
 
 struct Command {
     std::string bin;
-    std::vector<std::string> args;
+    std::vector<std::string> args{};
 
     Command(std::string input) {
         std::vector<std::string> parts{split(input)};
@@ -38,12 +38,18 @@ struct Command {
         this->bin = parts.front();
         this->args = std::vector(parts.begin() + 1, parts.end());
     }
+
+    std::string toStr() const {
+        std::string execCommand = this->bin + " ";
+        for (const std::string& arg : this->args) {
+            execCommand += arg;
+        }
+        return execCommand.c_str();
+    }
 };
 
 std::string getBinPath(const std::string bin, const std::vector<std::string> paths) {
-
     for (const std::string& path : paths) {
-
         const std::string binPath = path + "/" + bin;
         if (std::filesystem::exists(binPath)) {
             return binPath;
@@ -70,15 +76,17 @@ int main() {
 
         Command command{input};
 
-        std::string firstArg;
-
-        if (command.args.size() != 0) {
-            firstArg = command.args[0];
-        } else {
-            firstArg = "";
-        }
-
         if (command.bin == "type") {
+
+            std::string firstArg = "";
+
+            if (command.args.size() == 0) {
+                return 1;
+            } else {
+                // we naivly assume that there is only one argument
+                firstArg = command.args[0];
+            }
+
             if (std::find(commands.begin(), commands.end(), firstArg) != commands.end()) {
                 std::cout << firstArg << " is a shell builtin" << '\n';
             } else {
@@ -91,8 +99,12 @@ int main() {
             }
         }
 
-        else if (command.bin == "exit" && firstArg == "0") {
-            return 0;
+        else if (command.bin == "exit") {
+            if (command.args.size() != 0) {
+                return std::stoi(command.args[0]);
+            } else {
+                return 1;
+            }
         }
 
         else if (command.bin == "echo") {
@@ -102,8 +114,11 @@ int main() {
             std::cout << '\n';
 
         } else {
-
-            std::cout << command.bin << ": command not found" << '\n';
+            if (getBinPath(command.bin, paths) != "") {
+                std::system(command.toStr().c_str());
+            } else {
+                std::cout << command.bin << ": command not found" << '\n';
+            }
         }
 
         std::cout << "$ ";
