@@ -110,12 +110,14 @@ int main() {
         }
 
         else if (command.bin == "cd") {
-            if (chdir(firstArg.c_str()) != 0) {
+            if (firstArg == "" || firstArg == "~") {
+                // technically speaking the env might not be set but we dont care right now
+                std::filesystem::current_path(getenv("HOME"));
+            } else if (chdir(firstArg.c_str()) != 0) {
                 std::cout << "cd: " << firstArg << ": No such file or directory" << '\n';
             }
-        }
 
-        else if (command.bin == "echo") {
+        } else if (command.bin == "echo") {
             for (std::string arg : command.args) {
                 std::cout << arg << ' ';
             }
