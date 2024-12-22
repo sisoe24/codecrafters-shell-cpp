@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <iostream>
 #include <string>
+#include <unistd.h>
 #include <vector>
 
 std::vector<std::string> split(const std::string& text, const char& delimiter = ' ') {
@@ -76,15 +77,16 @@ int main() {
 
         Command command{input};
 
+        std::string firstArg = "";
+        if (command.args.size() > 0) {
+            // we naivly assume that we care only for the first argument;
+            firstArg = command.args.front();
+        }
+
         if (command.bin == "type") {
 
-            std::string firstArg = "";
-
-            if (command.args.size() == 0) {
+            if (firstArg == "") {
                 return 1;
-            } else {
-                // we naivly assume that there is only one argument
-                firstArg = command.args[0];
             }
 
             if (std::find(commands.begin(), commands.end(), firstArg) != commands.end()) {
@@ -100,15 +102,17 @@ int main() {
         }
 
         else if (command.bin == "exit") {
-            if (command.args.size() != 0) {
-                return std::stoi(command.args[0]);
-            } else {
-                return 1;
-            }
+            return std::stoi(firstArg);
         }
 
         else if (command.bin == "pwd") {
             std::cout << std::filesystem::current_path().string() << '\n';
+        }
+
+        else if (command.bin == "cd") {
+            if (chdir(firstArg.c_str()) != 0) {
+                std::cout << "cd: " << firstArg << ": No such file or directory" << '\n';
+            }
         }
 
         else if (command.bin == "echo") {
