@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -40,6 +41,8 @@ int main() {
     std::cout << std::unitbuf;
     std::cerr << std::unitbuf;
 
+    std::vector<std::string> commands{"type", "pwd", "echo", "exit"};
+
     std::cout << "$ ";
 
     while (true) {
@@ -49,7 +52,15 @@ int main() {
 
         Command command{input};
 
-        if (command.bin == "exit" && command.args[0] == "0") {
+        if (command.bin == "type") {
+            if (std::find(commands.begin(), commands.end(), command.args[0]) != commands.end()) {
+                std::cout << command.args[0] << " is a shell builtin" << std::endl;
+            } else {
+                std::cout << command.args[0] << ": not found" << std::endl;
+            }
+        }
+
+        else if (command.bin == "exit" && command.args[0] == "0") {
             return 0;
         }
 
