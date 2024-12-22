@@ -1,4 +1,40 @@
 #include <iostream>
+#include <string>
+#include <vector>
+
+std::vector<std::string> split(std::string& text, const char& delimiter = ' ') {
+    std::string item;
+    std::vector<std::string> items;
+
+    for (size_t i = 0; i < text.length(); ++i) {
+        char c = text[i];
+
+        if (c == delimiter) {
+            items.push_back(item);
+            item = "";
+        } else {
+            item += c;
+        }
+    }
+
+    if (item != "") {
+        items.push_back(item);
+    }
+
+    return items;
+}
+
+struct Command {
+    std::string bin;
+    std::vector<std::string> args;
+
+    Command(std::string input) {
+        std::vector<std::string> parts{split(input)};
+
+        this->bin = parts.front();
+        this->args = std::vector(parts.begin() + 1, parts.end());
+    }
+};
 
 int main() {
     std::cout << std::unitbuf;
@@ -7,14 +43,27 @@ int main() {
     std::cout << "$ ";
 
     while (true) {
+
         std::string input;
         std::getline(std::cin, input);
 
-        if (input == "exit 0") {
+        Command command{input};
+
+        if (command.bin == "exit" && command.args[0] == "0") {
             return 0;
         }
 
-        std::cout << input << ": command not found" << '\n';
+        else if (command.bin == "echo") {
+            for (std::string arg : command.args) {
+                std::cout << arg << ' ';
+            }
+            std::cout << '\n';
+
+        } else {
+
+            std::cout << command.bin << ": command not found" << '\n';
+        }
+
         std::cout << "$ ";
     }
 }
