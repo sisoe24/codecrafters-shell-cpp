@@ -107,6 +107,10 @@ int main() {
             }
         }
 
+        else if (command.bin == "pwd") {
+            std::cout << std::filesystem::current_path().string() << '\n';
+        }
+
         else if (command.bin == "echo") {
             for (std::string arg : command.args) {
                 std::cout << arg << ' ';
