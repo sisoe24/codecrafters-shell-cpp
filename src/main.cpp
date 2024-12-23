@@ -7,6 +7,10 @@
 #include <unistd.h>
 #include <vector>
 
+const char SINGLE_QUOTE = '\'';
+const char DOUBLE_QUOTE = '"';
+const char ESCAPE_CHAR = '\\';
+
 std::vector<std::string> split(const std::string& text, const char& delimiter = ' ') {
     std::string item;
     std::vector<std::string> items;
@@ -14,26 +18,44 @@ std::vector<std::string> split(const std::string& text, const char& delimiter = 
     bool openQuote = false;
     bool openSingleQuote = false;
     bool openDoubleQuote = false;
+    bool openEscape = false;
 
     for (size_t i = 0; i < text.length(); ++i) {
         char c = text[i];
 
-        if (c == '\'' && !openDoubleQuote) {
+        if (c == ESCAPE_CHAR) {
+            openEscape = true;
+            char nextChar = text[i + 1];
+
+            if (!openQuote) {
+                c = nextChar;
+                i++;
+            } else if (!openSingleQuote) {
+                if (nextChar == DOUBLE_QUOTE || nextChar == '$' || nextChar == ESCAPE_CHAR) {
+                    c = nextChar;
+                    i++;
+                }
+            }
+        }
+
+        if (!openEscape && c == SINGLE_QUOTE && !openDoubleQuote) {
             openSingleQuote = !openSingleQuote;
             openQuote = !openQuote;
-        } else if (c == '"') {
+        } else if (!openEscape && c == DOUBLE_QUOTE && !openSingleQuote) {
             openDoubleQuote = !openDoubleQuote;
             openQuote = !openQuote;
         }
 
         if (c == delimiter && !openQuote) {
-            if ((openQuote && item == "") || item != "") {
+            if ((openEscape && item == "") || item != "") {
                 items.push_back(item);
                 item = "";
             }
         } else {
             item += c;
         }
+
+        openEscape = false;
     }
 
     if (item != "") {
