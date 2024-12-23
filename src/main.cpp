@@ -11,12 +11,22 @@ std::vector<std::string> split(const std::string& text, const char& delimiter = 
     std::string item;
     std::vector<std::string> items;
 
+    bool openQuote = false;
+    bool openSingleQuote = false;
+
     for (size_t i = 0; i < text.length(); ++i) {
         char c = text[i];
 
-        if (c == delimiter) {
-            items.push_back(item);
-            item = "";
+        if (c == '\'') {
+            openSingleQuote = !openSingleQuote;
+            openQuote = !openQuote;
+        }
+
+        if (c == delimiter && !openQuote) {
+            if ((openQuote && item == "") || item != "") {
+                items.push_back(item);
+                item = "";
+            }
         } else {
             item += c;
         }
@@ -25,13 +35,17 @@ std::vector<std::string> split(const std::string& text, const char& delimiter = 
     if (item != "") {
         items.push_back(item);
     }
+    //
+    // for (std::string& i : items) {
+    //     std::cout << "i: " << i << '\n';
+    // }
 
     return items;
 }
 
 struct Command {
     std::string bin;
-    std::vector<std::string> args{};
+    std::vector<std::string> args;
 
     Command(std::string input) {
         std::vector<std::string> parts{split(input)};
@@ -43,7 +57,7 @@ struct Command {
     std::string toStr() const {
         std::string execCommand = this->bin + " ";
         for (const std::string& arg : this->args) {
-            execCommand += arg;
+            execCommand += arg + " ";
         }
         return execCommand.c_str();
     }
@@ -57,6 +71,13 @@ std::string getBinPath(const std::string bin, const std::vector<std::string> pat
         }
     }
     return "";
+}
+
+std::string stripQuotes(const std::string& str) {
+    if (str.size() >= 2 && str.front() == '\'' && str.back() == '\'') {
+        return str.substr(1, str.size() - 2);
+    }
+    return str;
 }
 
 int main() {
@@ -119,7 +140,7 @@ int main() {
 
         } else if (command.bin == "echo") {
             for (std::string arg : command.args) {
-                std::cout << arg << ' ';
+                std::cout << stripQuotes(arg) << ' ';
             }
             std::cout << '\n';
 
