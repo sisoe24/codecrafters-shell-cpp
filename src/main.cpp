@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <iostream>
 #include <string>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <vector>
 
@@ -41,9 +42,13 @@ std::vector<std::string> split(const std::string& text, const char& delimiter = 
         if (!openEscape && c == SINGLE_QUOTE && !openDoubleQuote) {
             openSingleQuote = !openSingleQuote;
             openQuote = !openQuote;
-        } else if (!openEscape && c == DOUBLE_QUOTE && !openSingleQuote) {
+            continue;
+        }
+
+        if (!openEscape && c == DOUBLE_QUOTE && !openSingleQuote) {
             openDoubleQuote = !openDoubleQuote;
             openQuote = !openQuote;
+            continue;
         }
 
         if (c == delimiter && !openQuote) {
@@ -63,7 +68,7 @@ std::vector<std::string> split(const std::string& text, const char& delimiter = 
     }
 
     // for (std::string& i : items) {
-    //     std::cout << "i: " << i << '\n';
+    //     std::cout << "  - " << i << '\n';
     // }
 
     return items;
@@ -86,6 +91,31 @@ struct Command {
             execCommand += arg + " ";
         }
         return execCommand.c_str();
+    }
+
+    int execute() {
+        pid_t pid = fork();
+
+        if (pid == -1) {
+            return -1;
+        }
+
+        if (pid == 0) {
+            std::vector<char*> cargs;
+            cargs.push_back(const_cast<char*>(this->bin.c_str()));
+
+            for (const std::string& arg : this->args) {
+                cargs.push_back(const_cast<char*>(arg.c_str()));
+            }
+            cargs.push_back(nullptr);
+
+            execvp(this->bin.c_str(), cargs.data());
+            exit(1);
+        } else {
+            int status;
+            waitpid(pid, &status, 0);
+            return WEXITSTATUS(status);
+        }
     }
 };
 
@@ -171,13 +201,13 @@ int main() {
 
         } else if (command.bin == "echo") {
             for (std::string arg : command.args) {
-                std::cout << stripQuotes(arg) << ' ';
+                std::cout << arg + " ";
             }
             std::cout << '\n';
 
         } else {
             if (getBinPath(command.bin, paths) != "") {
-                std::system(command.toStr().c_str());
+                command.execute();
             } else {
                 std::cout << command.bin << ": command not found" << '\n';
             }
