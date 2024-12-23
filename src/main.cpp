@@ -13,12 +13,16 @@ std::vector<std::string> split(const std::string& text, const char& delimiter = 
 
     bool openQuote = false;
     bool openSingleQuote = false;
+    bool openDoubleQuote = false;
 
     for (size_t i = 0; i < text.length(); ++i) {
         char c = text[i];
 
-        if (c == '\'') {
+        if (c == '\'' && !openDoubleQuote) {
             openSingleQuote = !openSingleQuote;
+            openQuote = !openQuote;
+        } else if (c == '"') {
+            openDoubleQuote = !openDoubleQuote;
             openQuote = !openQuote;
         }
 
@@ -35,7 +39,7 @@ std::vector<std::string> split(const std::string& text, const char& delimiter = 
     if (item != "") {
         items.push_back(item);
     }
-    //
+
     // for (std::string& i : items) {
     //     std::cout << "i: " << i << '\n';
     // }
@@ -74,9 +78,14 @@ std::string getBinPath(const std::string bin, const std::vector<std::string> pat
 }
 
 std::string stripQuotes(const std::string& str) {
-    if (str.size() >= 2 && str.front() == '\'' && str.back() == '\'') {
+    if (str.size() <= 2) {
+        return str;
+    }
+
+    if ((str.front() == '"' && str.back() == '"') || (str.front() == '\'' && str.back() == '\'')) {
         return str.substr(1, str.size() - 2);
     }
+
     return str;
 }
 
