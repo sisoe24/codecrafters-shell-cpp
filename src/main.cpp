@@ -79,6 +79,10 @@ int file_fd = -1;
 int stdout_fd = dup(STDOUT_FILENO);
 int stderr_fd = dup(STDERR_FILENO);
 
+bool isRedirect(const std::string& c) {
+    return c == ">" || c == "1>" || c == ">>" || c == "1>>" || c == "2>" || c == "2>>";
+}
+
 struct Command {
     std::string bin;
     std::vector<std::string> args;
@@ -96,7 +100,7 @@ struct Command {
 
         for (size_t i = 0; i < this->args.size(); ++i) {
             const std::string arg = this->args[i];
-            if (arg == ">" || arg == "1>") {
+            if (isRedirect(arg)) {
                 redirect = arg;
                 output = this->args[i + 1];
                 break;
@@ -114,7 +118,7 @@ struct Command {
                 dup2(file_fd, STDOUT_FILENO);
 
             } else if (redirect == ">>" || redirect == "1>>") {
-                file_fd = open(output.c_str(), O_WRONLY | O_APPEND | O_TRUNC, 0644);
+                file_fd = open(output.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
                 dup2(file_fd, STDOUT_FILENO);
 
             } else if (redirect == "2>") {
@@ -122,7 +126,7 @@ struct Command {
                 dup2(file_fd, STDERR_FILENO);
 
             } else if (redirect == "2>>") {
-                file_fd = open(output.c_str(), O_WRONLY | O_APPEND | O_TRUNC, 0644);
+                file_fd = open(output.c_str(), O_WRONLY | O_CREAT | O_APPEND, 0644);
                 dup2(file_fd, STDERR_FILENO);
             }
         }
@@ -252,6 +256,7 @@ int main() {
 
         if (command.redirect) {
             dup2(stdout_fd, STDOUT_FILENO);
+            dup2(stderr_fd, STDERR_FILENO);
             close(file_fd);
         }
 
